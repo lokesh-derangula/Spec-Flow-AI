@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import Dashboard from './components/Dashboard';
 import GeneratorStudio from './components/GeneratorStudio';
-import DataPipelineStudio from './components/DataPipelineStudio';
 import CicdHub from './components/CicdHub';
-import { API_URL } from './config';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -18,8 +16,6 @@ export default function App() {
     specFilename: string;
   } | null>(null);
 
-  const [pipelineData, setPipelineData] = useState<any[]>([]);
-
   const handleGenerated = (data: {
     gherkin: string;
     pageCode: string;
@@ -28,25 +24,6 @@ export default function App() {
     specFilename: string;
   }) => {
     setGeneratedSpec(data);
-    
-    // Parse step details for NLP flow visualization
-    fetch(`${API_URL}/api/preprocess`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        story: 'N/A', // Story not required for raw step listing
-        criteria: data.gherkin.replace(/Feature:.*[\s\S]*?Scenario:.*\n/, ''), // strip headers
-      }),
-    })
-      .then(res => res.json())
-      .then(resData => {
-        if (resData.success) {
-          setPipelineData(resData.pipeline_table);
-        }
-      })
-      .catch(err => console.error("Preprocessing error:", err));
   };
 
   const renderContent = () => {
@@ -62,8 +39,6 @@ export default function App() {
             generatedSpec={generatedSpec}
           />
         );
-      case 'pipeline':
-        return <DataPipelineStudio pipelineData={pipelineData} />;
       case 'cicd':
         return <CicdHub />;
       default:
@@ -74,8 +49,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Home', index: '01' },
     { id: 'generator', label: 'Magic Studio', index: '02' },
-    { id: 'pipeline', label: 'AI Tuning', index: '03' },
-    { id: 'cicd', label: 'Integrations', index: '04' },
+    { id: 'cicd', label: 'Integrations', index: '03' },
   ];
 
   return (
