@@ -103,7 +103,11 @@ export default function DataPipelineStudio({ pipelineData }: DataPipelineStudioP
       if (data.progress === 100) {
         eventSource.close();
         setTraining(false);
-        setStatusMsg('Model fine-tuned successfully. Saved weights locally.');
+        if (data.message && (data.message.toLowerCase().includes('fail') || data.message.toLowerCase().includes('error'))) {
+          // Keep failure/error message already set in statusMsg
+        } else {
+          setStatusMsg('Model fine-tuned successfully. Saved weights locally.');
+        }
       }
     };
 

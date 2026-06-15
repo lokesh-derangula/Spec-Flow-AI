@@ -40,11 +40,39 @@ class T5FineTuner:
         
         # Load dataset using pandas
         df = pd.read_csv(csv_path)
-        if "Story" not in df.columns or "Criteria" not in df.columns:
-            raise ValueError("CSV must contain 'Story' and 'Criteria' columns.")
+        
+        # Try to find Story and Criteria columns dynamically
+        story_col = None
+        criteria_col = None
+        
+        # 1. Exact match
+        if "Story" in df.columns:
+            story_col = "Story"
+        if "Criteria" in df.columns:
+            criteria_col = "Criteria"
             
-        stories = df["Story"].dropna().tolist()
-        criteria = df["Criteria"].dropna().tolist()
+        # 2. Case-insensitive search if not found
+        if not story_col or not criteria_col:
+            for col in df.columns:
+                col_lower = str(col).lower()
+                if not story_col and ("story" in col_lower or "input" in col_lower or "source" in col_lower):
+                    story_col = col
+                if not criteria_col and ("criteria" in col_lower or "gherkin" in col_lower or "target" in col_lower or "output" in col_lower or "regression" in col_lower or "test" in col_lower):
+                    if col != story_col:
+                        criteria_col = col
+                        
+        # 3. Fallback: if there are at least two columns and we still don't have them, use the first two columns
+        if (not story_col or not criteria_col) and len(df.columns) >= 2:
+            if not story_col:
+                story_col = df.columns[0]
+            if not criteria_col:
+                criteria_col = df.columns[1] if df.columns[1] != story_col else df.columns[0]
+                
+        if not story_col or not criteria_col:
+            raise ValueError("CSV must contain columns representing 'Story' and 'Criteria'.")
+            
+        stories = df[story_col].dropna().tolist()
+        criteria = df[criteria_col].dropna().tolist()
         
         # Format dataset for T5 translation task
         inputs = ["translate Story to Gherkin: " + str(s) for s in stories]
